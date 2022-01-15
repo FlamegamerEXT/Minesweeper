@@ -5,4 +5,4 @@ Once a game is won or lost, clicking on the 'New Game' restarts the game at the 
 CONTROLS:
  - Left click on mines to uncover them
  - Right click on mines to mark/unmark them
- - Click on buttons to use them.
+ - Click on buttons to use them
