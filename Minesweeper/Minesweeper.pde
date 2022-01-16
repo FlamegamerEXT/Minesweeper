@@ -25,6 +25,8 @@ void setup() {
 
 /** Create an array of new squares, and resets buttons and booleans */
 void newGame(){
+  gameOn = true;
+  aiHint = false;
   // Initialise squares
   squares = new Square[X_MAX][Y_MAX];
   for (int x = 0; x < X_MAX; x++){
@@ -50,8 +52,6 @@ void newGame(){
     }
   }
   drawButtons();
-  gameOn = true;
-  aiHint = false;
 }
 
 /** Return a set of booleans to whether the adjacent squares are within the array */
@@ -71,20 +71,22 @@ Point[] adjacentSquaresPoint(int x, int y){
 /** Redraw the buttons at the bottom of the window */
 void drawButtons(){
   float y = height-BUTTON_HEIGHT-BUTTON_SPACING*.5;
-  // Draw the three restart button
-  for (int i = 0; i < BUTTON_TEXT.length; i++){
-    // If it corresponds to the current difficulty, have different colouring
-    if (bombChance == 6-i){
-      stroke(169, 100, 49);
-      fill(225, 144, 64);
-    } else {
-      stroke(169, 169, 49);
-      fill(225, 225, 104);
+  // Draw the three restart buttons
+  if (!gameOn) {
+    for (int i = 0; i < BUTTON_TEXT.length; i++){
+      // If it corresponds to the current difficulty, have different colouring
+      if (bombChance == 6-i){
+        stroke(169, 100, 49);
+        fill(225, 144, 64);
+      } else {
+        stroke(169, 169, 49);
+        fill(225, 225, 104);
+      }
+      rect(BUTTON_SPACING+i*(BUTTON_SPACING+BUTTON_WIDTH), y, BUTTON_WIDTH, BUTTON_HEIGHT);
+      fill(25, 25, 9);
+      text("New Game", BUTTON_WIDTH*.5+BUTTON_SPACING+i*(BUTTON_SPACING+BUTTON_WIDTH), y+25);
+      text("("+BUTTON_TEXT[i]+")", BUTTON_WIDTH*.5+BUTTON_SPACING+i*(BUTTON_SPACING+BUTTON_WIDTH), y+50);
     }
-    rect(BUTTON_SPACING+i*(BUTTON_SPACING+BUTTON_WIDTH), y, BUTTON_WIDTH, BUTTON_HEIGHT);
-    fill(25, 25, 9);
-    text("New Game", BUTTON_WIDTH*.5+BUTTON_SPACING+i*(BUTTON_SPACING+BUTTON_WIDTH), y+25);
-    text("("+BUTTON_TEXT[i]+")", BUTTON_WIDTH*.5+BUTTON_SPACING+i*(BUTTON_SPACING+BUTTON_WIDTH), y+50);
   }
   
   // Draw the AI button
@@ -100,17 +102,17 @@ void drawButtons(){
   rect(width-BUTTON_WIDTH-BUTTON_SPACING, y, BUTTON_WIDTH, BUTTON_HEIGHT);
   fill(25, 9, 25);
   text(printOut,width-BUTTON_WIDTH*0.5-BUTTON_SPACING, y+38);
-  
-  // Remove any text in the bottom of the window
-  fill(BACKGROUND_R, BACKGROUND_G, BACKGROUND_B);
-  stroke(BACKGROUND_R, BACKGROUND_G, BACKGROUND_B);
-  rect((width+BUTTON_WIDTH-BUTTON_SPACING)*.5, y, BUTTON_WIDTH*1.5, BUTTON_HEIGHT);
 }
 
-/** The draw step updates the graphics when  */
+/** The draw step updates the graphics when a change to the graphics is made */
 void draw(){
   if (toDraw.size() == X_MAX*Y_MAX){
-    newGame();  // If the board is being redrawn, generate a new board.
+    // If the board is being redrawn, generate a new board.
+    newGame();
+    // Remove any text in the bottom of the window
+    fill(BACKGROUND_R, BACKGROUND_G, BACKGROUND_B);
+    stroke(BACKGROUND_R, BACKGROUND_G, BACKGROUND_B);
+    rect(0, height-BUTTON_HEIGHT-BUTTON_SPACING*.5-1, (width-BUTTON_SPACING)*.5+BUTTON_WIDTH*2, BUTTON_HEIGHT+2);
   }
   while (!toDraw.isEmpty()){  // Redraws all the squares that need to be drawn.
     Point p = toDraw.poll();
@@ -120,7 +122,8 @@ void draw(){
       if (target.isMine()) {
         gameOn = false;
         fill(250, 5, 5);
-        text("GAME OVER!", width*.5+BUTTON_WIDTH, height-BUTTON_HEIGHT*0.5);
+        text("GAME OVER!", BUTTON_SPACING+BUTTON_WIDTH + width*.5, height-BUTTON_HEIGHT*0.5);
+        drawButtons();
       } else {
         // Check for a game-winning gamestate
         boolean allSpacesOpen = true;
@@ -132,7 +135,8 @@ void draw(){
         if (allSpacesOpen){  // Game has been won!
           gameOn = false;
           fill(250, 5, 5);
-          text("YOU WIN!", width*.5+BUTTON_WIDTH, height-BUTTON_HEIGHT*0.5);
+          text("YOU WIN!", BUTTON_SPACING+BUTTON_WIDTH + width*.5, height-BUTTON_HEIGHT*0.5);
+          drawButtons();
         } else if (target.getAdjacentMines() == 0){
           // If a space is safe and all adjacents are also safe, open the adjacent spaces
           int x = target.getX(), y = target.getY();
@@ -154,8 +158,9 @@ void draw(){
   }
 }
 
+/** The mouse event that figures out where the mouse clicked, and what to do according to the position*/
 void mouseReleased() {
-  //Get target square
+  //Get target square (if within the minefield)
   int x = (int)(mouseX - (mouseX % SIZE))/SIZE, y = (int)(mouseY - (mouseY % SIZE))/SIZE;
   if ((y < Y_MAX*SIZE)&&(gameOn)) {
     Square target = squares[x][y];
@@ -171,10 +176,8 @@ void mouseReleased() {
   } else if ((mouseY < height-BUTTON_SPACING*.5)&&(mouseY > height-BUTTON_HEIGHT-BUTTON_SPACING*.5)){
     // If a button is being clicked
     for (int i = 0; i < BUTTON_TEXT.length; i++){
-      if ((mouseX > BUTTON_WIDTH*i+BUTTON_SPACING*(i+.5))&&(mouseX < BUTTON_WIDTH*(i+1)+BUTTON_SPACING*(i+.5))){
-        gameOn = false;
+      if ((!gameOn)&&(mouseX > BUTTON_WIDTH*i+BUTTON_SPACING*(i+.5))&&(mouseX < BUTTON_WIDTH*(i+1)+BUTTON_SPACING*(i+.5))){
         bombChance = 6-i;
-        newGame();
         for (x = 0; x < X_MAX; x++){
           for (y = 0; y < Y_MAX; y++){
             toDraw.add(new Point(x, y));  // Redraw every square
@@ -185,5 +188,4 @@ void mouseReleased() {
     }
     /** ADD AI BUTTON AND FUNCTIONALITY */
   }
-  
 }
