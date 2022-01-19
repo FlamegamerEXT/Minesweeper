@@ -53,6 +53,7 @@ void newGame() {
       target.setAdjacentMines(adjMines);
     }
   }
+  hintedSquares.clear();
   drawButtons();
 }
 
